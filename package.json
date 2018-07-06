@@ -1,0 +1,28 @@
+{
+  "name": "vuex-apollo",
+  "version": "1.0.0",
+  "description": "Vuex Setup with Apollo Integration",
+  "main": "dist/vuex-apollo.js",
+  "scripts": {
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alajfit/vuex-apollo.git"
+  },
+  "keywords": [
+    "Vuex",
+    "Apollo",
+    "GraphQL"
+  ],
+  "author": "Alan J. Fitzpatrick",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alajfit/vuex-apollo/issues"
+  },
+  "homepage": "https://github.com/alajfit/vuex-apollo#readme",
+  "devDependencies": {
+    "vuepress": "^0.10.2"
+  }
+}
