@@ -2,8 +2,14 @@
   "name": "vuex-apollo",
   "version": "1.0.0",
   "description": "Vuex Setup with Apollo Integration",
-  "main": "dist/vuex-apollo.js",
+  "main": "dist/vuex-apollo.umd.js",
+  "module": "dist/vuex-apollo.esm.js",
+  "unpkg": "dist/vuex-apollo.min.js",
   "scripts": {
+    "build:browser": "parcel build src/index.js --out-dir dist --out-file vuex-apollo.min.js --target browser",
+    "build:es": "parcel build src/index.js --out-dir dist --out-file vuex-apollo.esm.js --target electron",
+    "build:umd": "parcel build src/index.js --out-dir dist --out-file vuex-apollo.umd.js --target node",
+    "build": "npm run build:browser && npm run build:es && npm run build:umd",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs"
   },
@@ -12,17 +18,23 @@
     "url": "git+https://github.com/alajfit/vuex-apollo.git"
   },
   "keywords": [
-    "Vuex",
-    "Apollo",
-    "GraphQL"
+    "vuex",
+    "apollo",
+    "graphql"
   ],
-  "author": "Alan J. Fitzpatrick",
+  "author": "Alan J. Fitzpatrick <alajfit@gmail.com>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/alajfit/vuex-apollo/issues"
   },
   "homepage": "https://github.com/alajfit/vuex-apollo#readme",
   "devDependencies": {
+    "parcel": "^1.9.4",
     "vuepress": "^0.10.2"
+  },
+  "dependencies": {
+    "apollo-boost": "^0.1.10",
+    "graphql": "^0.13.2",
+    "vuex": "^3.0.1"
   }
 }
