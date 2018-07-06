@@ -11,7 +11,8 @@
     "build:umd": "parcel build src/index.js --out-dir dist --out-file vuex-apollo.umd.js --target node",
     "build": "npm run build:browser && npm run build:es && npm run build:umd",
     "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs"
+    "docs:build": "vuepress build docs",
+    "demo": "parcel tests/demo/index.html"
   },
   "repository": {
     "type": "git",
@@ -29,12 +30,20 @@
   },
   "homepage": "https://github.com/alajfit/vuex-apollo#readme",
   "devDependencies": {
+    "@vue/component-compiler-utils": "^2.1.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-es2015": "^6.24.1",
     "parcel": "^1.9.4",
+    "parcel-bundler": "^1.9.4",
+    "parcel-plugin-vue": "^1.5.0",
+    "vue": "^2.5.16",
     "vuepress": "^0.10.2"
   },
   "dependencies": {
     "apollo-boost": "^0.1.10",
     "graphql": "^0.13.2",
+    "graphql-tag": "^2.9.2",
     "vuex": "^3.0.1"
   }
 }

@@ -1,6 +1,7 @@
 import ApolloClient from 'apollo-boost'
 
-export default apollo = options => 
-    new ApolloClient({
+export default options => {
+    return new ApolloClient({
         uri: options.uri
     })
+}
