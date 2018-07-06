@@ -1,5 +1,7 @@
 # Vuex Apollo
 Vuex Setup with Apollo Integration
+> Currently a WIP, star us and keep an eye
+
 [![npm](https://img.shields.io/npm/v/vuex-apollo.svg) ![npm](https://img.shields.io/npm/dm/vuex-apollo.svg)](https://www.npmjs.com/package/vuex-apollo)
 
 <p align="center">
