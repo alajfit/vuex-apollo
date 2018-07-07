@@ -21,9 +21,9 @@ npm install vuex-apollo --save
 
 ```js
 import Vue from 'vue'
-import App from './App.vue'
-import vuexApollo from '../../../src'
+import vuexApollo from 'vuex-apollo'
 import user from './modules/user'
+import App from './App.vue'
 
 Vue.use(vuexApollo, {
     uri: 'https://fakerql.com/graphql',
@@ -62,7 +62,7 @@ new Vue({
 </template>
 
 <script>
-    import { mapActions, mapGetters, mapState } from '../../../src'
+    import { mapActions, mapGetters, mapState } from 'vuex-apollo'
 
     export default {
         name: 'app',
