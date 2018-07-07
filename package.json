@@ -21,13 +21,14 @@
     "url": "git+https://github.com/alajfit/vuex-apollo.git"
   },
   "keywords": [
+    "vue",
     "vuex",
     "apollo",
     "graphql",
     "vuex-apollo",
+    "vuex-plugin",
     "vuex apollo",
     "vuexApollo",
-    "vue",
     "vue-apollo",
     "vueApollo"
   ],
