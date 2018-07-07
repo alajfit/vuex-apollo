@@ -6,9 +6,9 @@ function isPromise (val) {
 
 function patchAction (store, type, handler, local) {
     const entry = store._actions[type] || (store._actions[type] = [])
-  
+
     if (entry.length > 0) entry.pop()
-  
+
     entry.push(function wrappedActionHandler (payload, cb) {
         let res = handler({
             dispatch: local.dispatch,
@@ -32,11 +32,11 @@ function patchAction (store, type, handler, local) {
         }
     })
 }
-  
+
 function patchModule (store, path, module, hot) {
     const namespace = store._modules.getNamespace(path)
     const local = module.context
-  
+
     module.forEachAction((action, key) => patchAction(store, (namespace + key), action, local))
     module.forEachChild((child, key) => patchModule(store, path.concat(key), child, hot))
 }
@@ -44,8 +44,8 @@ function patchModule (store, path, module, hot) {
 export default store => {
     patchModule(store, [], store._modules.root)
 
-    const orig = Vuex.Store.prototype.registerModule;
-    Vuex.Store.prototype.registerModule = function registerModule(path, rawModule) {
+    const orig = Vuex.Store.prototype.registerModule
+    Vuex.Store.prototype.registerModule = function registerModule (path, rawModule) {
         orig.call(this, path, rawModule)
         patchModule(this, [].concat(path), this._modules.get([path]))
         this.dispatch(`${path}/INIT`)

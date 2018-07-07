@@ -4,7 +4,7 @@ import createStore from './store'
 import createApollo from './apollo'
 
 const VuexApollo = {
-    install(Vue, options) {
+    install (Vue, options) {
         Vue.use(Vuex)
         const apollo = createApollo(options)
         const store = createStore(Vuex, { apollo, gql })
