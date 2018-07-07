@@ -12,7 +12,7 @@
     "build": "npm run build:browser && npm run build:es && npm run build:umd",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs",
-    "demo": "parcel tests/demo/index.html"
+    "demo": "parcel tests/demo/index.html --out-dir tests/demo/dist"
   },
   "repository": {
     "type": "git",
