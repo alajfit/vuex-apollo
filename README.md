@@ -17,7 +17,7 @@ npm install vuex-apollo --save
 - vuexApollo can be imported as a normal vue plugin
 - You can pass the plugin 2 options
   - The *uri* of the graphql server
-  - An Array of objects with the *module name (name)* and the *ram module (module)*
+  - An Array of objects with the *module name* _(name)_ and the *raw module* _(module)_
 
 ```js
 import Vue from 'vue'
