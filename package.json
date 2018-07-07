@@ -1,6 +1,6 @@
 {
   "name": "vuex-apollo",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Vuex Setup with Apollo Integration",
   "main": "dist/vuex-apollo.umd.js",
   "module": "dist/vuex-apollo.esm.js",
