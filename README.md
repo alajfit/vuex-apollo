@@ -93,7 +93,7 @@ new Vue({
 
 [You Can See An Example Module Here](https://github.com/alajfit/vuex-apollo/tree/master/tests/demo/app/modules/user)
 
-> This is an Example of actions using the INIT self called action and destructing the appollo and gql properties
+> This is an Example of actions using the INIT self called action and destructing the apollo and gql properties
 ```js
 import * as types from './types'
 
