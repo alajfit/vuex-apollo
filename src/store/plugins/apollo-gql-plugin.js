@@ -48,5 +48,6 @@ export default store => {
     Vuex.Store.prototype.registerModule = function registerModule(path, rawModule) {
         orig.call(this, path, rawModule)
         patchModule(this, [].concat(path), this._modules.get([path]))
+        this.dispatch(`${path}/INIT`)
     }
 }

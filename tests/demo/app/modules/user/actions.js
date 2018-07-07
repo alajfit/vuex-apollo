@@ -1,6 +1,9 @@
 import * as types from './types'
 
 export const actions = {
+    INIT ({ commit }) {
+        console.log(`I'm called on init`)
+    },
     [types.GET_USER_INFO] ({ commit, apollo, gql }) {
         apollo.query({
             query: gql`

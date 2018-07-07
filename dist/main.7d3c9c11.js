@@ -11602,7 +11602,7 @@ module.exports = {
     "vuex": "^3.0.1"
   }
 };
-},{}],46:[function(require,module,exports) {
+},{}],21:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -11667,6 +11667,7 @@ exports.default = function (store) {
     _vuex2.default.Store.prototype.registerModule = function registerModule(path, rawModule) {
         orig.call(this, path, rawModule);
         patchModule(this, [].concat(path), this._modules.get([path]));
+        this.dispatch(path + '/INIT');
     };
 };
 },{"vuex":24}],28:[function(require,module,exports) {
@@ -11697,7 +11698,7 @@ exports.default = function (Vuex, _ref) {
 
     return store;
 };
-},{"../../package.json":44,"./plugins/apollo-gql-plugin":46}],139:[function(require,module,exports) {
+},{"../../package.json":44,"./plugins/apollo-gql-plugin":21}],139:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -20665,10 +20666,16 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
-var actions = exports.actions = _defineProperty({}, types.GET_USER_INFO, function (_ref) {
-    var commit = _ref.commit,
-        apollo = _ref.apollo,
-        gql = _ref.gql;
+var actions = exports.actions = _defineProperty({
+    INIT: function INIT(_ref) {
+        var commit = _ref.commit;
+
+        console.log('I\'m called on init');
+    }
+}, types.GET_USER_INFO, function (_ref2) {
+    var commit = _ref2.commit,
+        apollo = _ref2.apollo,
+        gql = _ref2.gql;
 
     apollo.query({
         query: gql(_templateObject)
@@ -20775,7 +20782,7 @@ function Module(config) {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:51017/');
+  var ws = new WebSocket('ws://localhost:54799/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
