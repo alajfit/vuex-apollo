@@ -68,7 +68,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({7:[function(require,module,exports) {
+})({12:[function(require,module,exports) {
 var global = arguments[3];
 'use strict';
 
@@ -7349,7 +7349,7 @@ if (inBrowser) {
 /*  */
 
 exports.default = Vue;
-},{}],13:[function(require,module,exports) {
+},{}],19:[function(require,module,exports) {
 var inserted = exports.cache = {}
 
 function noop () {}
@@ -7374,293 +7374,443 @@ exports.insert = function (css) {
   }
 }
 
-},{}],12:[function(require,module,exports) {
-var Vue // late bind
-var version
-var map = (window.__VUE_HOT_MAP__ = Object.create(null))
-var installed = false
-var isBrowserify = false
-var initHookName = 'beforeCreate'
+},{}],158:[function(require,module,exports) {
 
-exports.install = function (vue, browserify) {
-  if (installed) { return }
-  installed = true
+// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
+var global = module.exports = typeof window != 'undefined' && window.Math == Math
+  ? window : typeof self != 'undefined' && self.Math == Math ? self
+  // eslint-disable-next-line no-new-func
+  : Function('return this')();
+if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
 
-  Vue = vue.__esModule ? vue.default : vue
-  version = Vue.version.split('.').map(Number)
-  isBrowserify = browserify
+},{}],78:[function(require,module,exports) {
+var core = module.exports = { version: '2.5.7' };
+if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 
-  // compat with < 2.0.0-alpha.7
-  if (Vue.config._lifecycleHooks.indexOf('init') > -1) {
-    initHookName = 'init'
-  }
-
-  exports.compatible = version[0] >= 2
-  if (!exports.compatible) {
-    console.warn(
-      '[HMR] You are using a version of vue-hot-reload-api that is ' +
-        'only compatible with Vue.js core ^2.0.0.'
-    )
-    return
-  }
-}
-
-/**
- * Create a record for a hot module, which keeps track of its constructor
- * and instances
- *
- * @param {String} id
- * @param {Object} options
- */
-
-exports.createRecord = function (id, options) {
-  if(map[id]) { return }
-  
-  var Ctor = null
-  if (typeof options === 'function') {
-    Ctor = options
-    options = Ctor.options
-  }
-  makeOptionsHot(id, options)
-  map[id] = {
-    Ctor: Ctor,
-    options: options,
-    instances: []
-  }
-}
-
-/**
- * Check if module is recorded
- *
- * @param {String} id
- */
-
-exports.isRecorded = function (id) {
-  return typeof map[id] !== 'undefined'
-}
-
-/**
- * Make a Component options object hot.
- *
- * @param {String} id
- * @param {Object} options
- */
-
-function makeOptionsHot(id, options) {
-  if (options.functional) {
-    var render = options.render
-    options.render = function (h, ctx) {
-      var instances = map[id].instances
-      if (ctx && instances.indexOf(ctx.parent) < 0) {
-        instances.push(ctx.parent)
-      }
-      return render(h, ctx)
-    }
-  } else {
-    injectHook(options, initHookName, function() {
-      var record = map[id]
-      if (!record.Ctor) {
-        record.Ctor = this.constructor
-      }
-      record.instances.push(this)
-    })
-    injectHook(options, 'beforeDestroy', function() {
-      var instances = map[id].instances
-      instances.splice(instances.indexOf(this), 1)
-    })
-  }
-}
-
-/**
- * Inject a hook to a hot reloadable component so that
- * we can keep track of it.
- *
- * @param {Object} options
- * @param {String} name
- * @param {Function} hook
- */
-
-function injectHook(options, name, hook) {
-  var existing = options[name]
-  options[name] = existing
-    ? Array.isArray(existing) ? existing.concat(hook) : [existing, hook]
-    : [hook]
-}
-
-function tryWrap(fn) {
-  return function (id, arg) {
-    try {
-      fn(id, arg)
-    } catch (e) {
-      console.error(e)
-      console.warn(
-        'Something went wrong during Vue component hot-reload. Full reload required.'
-      )
-    }
-  }
-}
-
-function updateOptions (oldOptions, newOptions) {
-  for (var key in oldOptions) {
-    if (!(key in newOptions)) {
-      delete oldOptions[key]
-    }
-  }
-  for (var key$1 in newOptions) {
-    oldOptions[key$1] = newOptions[key$1]
-  }
-}
-
-exports.rerender = tryWrap(function (id, options) {
-  var record = map[id]
-  if (!options) {
-    record.instances.slice().forEach(function (instance) {
-      instance.$forceUpdate()
-    })
-    return
-  }
-  if (typeof options === 'function') {
-    options = options.options
-  }
-  if (record.Ctor) {
-    record.Ctor.options.render = options.render
-    record.Ctor.options.staticRenderFns = options.staticRenderFns
-    record.instances.slice().forEach(function (instance) {
-      instance.$options.render = options.render
-      instance.$options.staticRenderFns = options.staticRenderFns
-      // reset static trees
-      // pre 2.5, all static trees are cahced together on the instance
-      if (instance._staticTrees) {
-        instance._staticTrees = []
-      }
-      // 2.5.0
-      if (Array.isArray(record.Ctor.options.cached)) {
-        record.Ctor.options.cached = []
-      }
-      // 2.5.3
-      if (Array.isArray(instance.$options.cached)) {
-        instance.$options.cached = []
-      }
-      // post 2.5.4: v-once trees are cached on instance._staticTrees.
-      // Pure static trees are cached on the staticRenderFns array
-      // (both already reset above)
-      instance.$forceUpdate()
-    })
-  } else {
-    // functional or no instance created yet
-    record.options.render = options.render
-    record.options.staticRenderFns = options.staticRenderFns
-
-    // handle functional component re-render
-    if (record.options.functional) {
-      // rerender with full options
-      if (Object.keys(options).length > 2) {
-        updateOptions(record.options, options)
-      } else {
-        // template-only rerender.
-        // need to inject the style injection code for CSS modules
-        // to work properly.
-        var injectStyles = record.options._injectStyles
-        if (injectStyles) {
-          var render = options.render
-          record.options.render = function (h, ctx) {
-            injectStyles.call(ctx)
-            return render(h, ctx)
-          }
-        }
-      }
-      record.options._Ctor = null
-      // 2.5.3
-      if (Array.isArray(record.options.cached)) {
-        record.options.cached = []
-      }
-      record.instances.slice().forEach(function (instance) {
-        instance.$forceUpdate()
-      })
-    }
-  }
-})
-
-exports.reload = tryWrap(function (id, options) {
-  var record = map[id]
-  if (options) {
-    if (typeof options === 'function') {
-      options = options.options
-    }
-    makeOptionsHot(id, options)
-    if (record.Ctor) {
-      if (version[1] < 2) {
-        // preserve pre 2.2 behavior for global mixin handling
-        record.Ctor.extendOptions = options
-      }
-      var newCtor = record.Ctor.super.extend(options)
-      record.Ctor.options = newCtor.options
-      record.Ctor.cid = newCtor.cid
-      record.Ctor.prototype = newCtor.prototype
-      if (newCtor.release) {
-        // temporary global mixin strategy used in < 2.0.0-alpha.6
-        newCtor.release()
-      }
-    } else {
-      updateOptions(record.options, options)
-    }
-  }
-  record.instances.slice().forEach(function (instance) {
-    if (instance.$vnode && instance.$vnode.context) {
-      instance.$vnode.context.$forceUpdate()
-    } else {
-      console.warn(
-        'Root or manually mounted instance modified. Full reload required.'
-      )
-    }
-  })
-})
-
-},{}],6:[function(require,module,exports) {
-var __vueify_style_dispose__ = require("vueify/lib/insert-css").insert("#app {\n    color: #56b983;\n}");(function () {
-    'use strict';
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-    exports.default = {
-        name: 'app',
-        data: function data() {
-            return {
-                msg: 'Welcome to Your Vue.js App!'
-            };
-        },
-        mounted: function mounted() {
-            console.log(this.$store);
-        }
-    };
-})();
-if (module.exports.__esModule) module.exports = module.exports.default;
-var __vue__options__ = typeof module.exports === "function" ? module.exports.options : module.exports;
-if (__vue__options__.functional) {
-    console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
-}
-__vue__options__.render = function render() {
-    var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', { attrs: { "id": "app" } }, [_c('h1', [_vm._v(_vm._s(_vm.msg))]), _vm._v(" "), _c('button', { on: { "click": function click($event) {
-                _vm.$store.dispatch('movies/GET_LATEST_LISTINGS');
-            } } }, [_vm._v("Get Listings")])]);
+},{}],183:[function(require,module,exports) {
+module.exports = function (it) {
+  if (typeof it != 'function') throw TypeError(it + ' is not a function!');
+  return it;
 };
-__vue__options__.staticRenderFns = [];
-if (module.hot) {
-    (function () {
-        var hotAPI = require("vue-hot-reload-api");
-        hotAPI.install(require("vue"), true);
-        if (!hotAPI.compatible) return;
-        module.hot.accept();
-        module.hot.dispose(__vueify_style_dispose__);
-        if (!module.hot.data) {
-            hotAPI.createRecord("data-v-d19d7684", __vue__options__);
-        } else {
-            hotAPI.reload("data-v-d19d7684", __vue__options__);
-        }
-    })();
-}
-},{"vueify/lib/insert-css":13,"vue-hot-reload-api":12,"vue":7}],16:[function(require,module,exports) {
+
+},{}],159:[function(require,module,exports) {
+// optional / simple context binding
+var aFunction = require('./_a-function');
+module.exports = function (fn, that, length) {
+  aFunction(fn);
+  if (that === undefined) return fn;
+  switch (length) {
+    case 1: return function (a) {
+      return fn.call(that, a);
+    };
+    case 2: return function (a, b) {
+      return fn.call(that, a, b);
+    };
+    case 3: return function (a, b, c) {
+      return fn.call(that, a, b, c);
+    };
+  }
+  return function (/* ...args */) {
+    return fn.apply(that, arguments);
+  };
+};
+
+},{"./_a-function":183}],201:[function(require,module,exports) {
+module.exports = function (it) {
+  return typeof it === 'object' ? it !== null : typeof it === 'function';
+};
+
+},{}],193:[function(require,module,exports) {
+var isObject = require('./_is-object');
+module.exports = function (it) {
+  if (!isObject(it)) throw TypeError(it + ' is not an object!');
+  return it;
+};
+
+},{"./_is-object":201}],172:[function(require,module,exports) {
+module.exports = function (exec) {
+  try {
+    return !!exec();
+  } catch (e) {
+    return true;
+  }
+};
+
+},{}],189:[function(require,module,exports) {
+// Thank's IE8 for his funny defineProperty
+module.exports = !require('./_fails')(function () {
+  return Object.defineProperty({}, 'a', { get: function () { return 7; } }).a != 7;
+});
+
+},{"./_fails":172}],202:[function(require,module,exports) {
+var isObject = require('./_is-object');
+var document = require('./_global').document;
+// typeof document.createElement is 'object' in old IE
+var is = isObject(document) && isObject(document.createElement);
+module.exports = function (it) {
+  return is ? document.createElement(it) : {};
+};
+
+},{"./_is-object":201,"./_global":158}],194:[function(require,module,exports) {
+module.exports = !require('./_descriptors') && !require('./_fails')(function () {
+  return Object.defineProperty(require('./_dom-create')('div'), 'a', { get: function () { return 7; } }).a != 7;
+});
+
+},{"./_descriptors":189,"./_fails":172,"./_dom-create":202}],195:[function(require,module,exports) {
+// 7.1.1 ToPrimitive(input [, PreferredType])
+var isObject = require('./_is-object');
+// instead of the ES6 spec version, we didn't implement @@toPrimitive case
+// and the second argument - flag - preferred type is a string
+module.exports = function (it, S) {
+  if (!isObject(it)) return it;
+  var fn, val;
+  if (S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
+  if (typeof (fn = it.valueOf) == 'function' && !isObject(val = fn.call(it))) return val;
+  if (!S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
+  throw TypeError("Can't convert object to primitive value");
+};
+
+},{"./_is-object":201}],187:[function(require,module,exports) {
+var anObject = require('./_an-object');
+var IE8_DOM_DEFINE = require('./_ie8-dom-define');
+var toPrimitive = require('./_to-primitive');
+var dP = Object.defineProperty;
+
+exports.f = require('./_descriptors') ? Object.defineProperty : function defineProperty(O, P, Attributes) {
+  anObject(O);
+  P = toPrimitive(P, true);
+  anObject(Attributes);
+  if (IE8_DOM_DEFINE) try {
+    return dP(O, P, Attributes);
+  } catch (e) { /* empty */ }
+  if ('get' in Attributes || 'set' in Attributes) throw TypeError('Accessors not supported!');
+  if ('value' in Attributes) O[P] = Attributes.value;
+  return O;
+};
+
+},{"./_an-object":193,"./_ie8-dom-define":194,"./_to-primitive":195,"./_descriptors":189}],188:[function(require,module,exports) {
+module.exports = function (bitmap, value) {
+  return {
+    enumerable: !(bitmap & 1),
+    configurable: !(bitmap & 2),
+    writable: !(bitmap & 4),
+    value: value
+  };
+};
+
+},{}],160:[function(require,module,exports) {
+var dP = require('./_object-dp');
+var createDesc = require('./_property-desc');
+module.exports = require('./_descriptors') ? function (object, key, value) {
+  return dP.f(object, key, createDesc(1, value));
+} : function (object, key, value) {
+  object[key] = value;
+  return object;
+};
+
+},{"./_object-dp":187,"./_property-desc":188,"./_descriptors":189}],161:[function(require,module,exports) {
+var hasOwnProperty = {}.hasOwnProperty;
+module.exports = function (it, key) {
+  return hasOwnProperty.call(it, key);
+};
+
+},{}],133:[function(require,module,exports) {
+
+var global = require('./_global');
+var core = require('./_core');
+var ctx = require('./_ctx');
+var hide = require('./_hide');
+var has = require('./_has');
+var PROTOTYPE = 'prototype';
+
+var $export = function (type, name, source) {
+  var IS_FORCED = type & $export.F;
+  var IS_GLOBAL = type & $export.G;
+  var IS_STATIC = type & $export.S;
+  var IS_PROTO = type & $export.P;
+  var IS_BIND = type & $export.B;
+  var IS_WRAP = type & $export.W;
+  var exports = IS_GLOBAL ? core : core[name] || (core[name] = {});
+  var expProto = exports[PROTOTYPE];
+  var target = IS_GLOBAL ? global : IS_STATIC ? global[name] : (global[name] || {})[PROTOTYPE];
+  var key, own, out;
+  if (IS_GLOBAL) source = name;
+  for (key in source) {
+    // contains in native
+    own = !IS_FORCED && target && target[key] !== undefined;
+    if (own && has(exports, key)) continue;
+    // export native or passed
+    out = own ? target[key] : source[key];
+    // prevent global pollution for namespaces
+    exports[key] = IS_GLOBAL && typeof target[key] != 'function' ? source[key]
+    // bind timers to global for call from export context
+    : IS_BIND && own ? ctx(out, global)
+    // wrap global constructors for prevent change them in library
+    : IS_WRAP && target[key] == out ? (function (C) {
+      var F = function (a, b, c) {
+        if (this instanceof C) {
+          switch (arguments.length) {
+            case 0: return new C();
+            case 1: return new C(a);
+            case 2: return new C(a, b);
+          } return new C(a, b, c);
+        } return C.apply(this, arguments);
+      };
+      F[PROTOTYPE] = C[PROTOTYPE];
+      return F;
+    // make static versions for prototype methods
+    })(out) : IS_PROTO && typeof out == 'function' ? ctx(Function.call, out) : out;
+    // export proto methods to core.%CONSTRUCTOR%.methods.%NAME%
+    if (IS_PROTO) {
+      (exports.virtual || (exports.virtual = {}))[key] = out;
+      // export proto methods to core.%CONSTRUCTOR%.prototype.%NAME%
+      if (type & $export.R && expProto && !expProto[key]) hide(expProto, key, out);
+    }
+  }
+};
+// type bitmap
+$export.F = 1;   // forced
+$export.G = 2;   // global
+$export.S = 4;   // static
+$export.P = 8;   // proto
+$export.B = 16;  // bind
+$export.W = 32;  // wrap
+$export.U = 64;  // safe
+$export.R = 128; // real proto method for `library`
+module.exports = $export;
+
+},{"./_global":158,"./_core":78,"./_ctx":159,"./_hide":160,"./_has":161}],190:[function(require,module,exports) {
+var toString = {}.toString;
+
+module.exports = function (it) {
+  return toString.call(it).slice(8, -1);
+};
+
+},{}],171:[function(require,module,exports) {
+// fallback for non-array-like ES3 and non-enumerable old V8 strings
+var cof = require('./_cof');
+// eslint-disable-next-line no-prototype-builtins
+module.exports = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
+  return cof(it) == 'String' ? it.split('') : Object(it);
+};
+
+},{"./_cof":190}],184:[function(require,module,exports) {
+// 7.2.1 RequireObjectCoercible(argument)
+module.exports = function (it) {
+  if (it == undefined) throw TypeError("Can't call method on  " + it);
+  return it;
+};
+
+},{}],196:[function(require,module,exports) {
+// to indexed object, toObject with fallback for non-array-like ES3 strings
+var IObject = require('./_iobject');
+var defined = require('./_defined');
+module.exports = function (it) {
+  return IObject(defined(it));
+};
+
+},{"./_iobject":171,"./_defined":184}],206:[function(require,module,exports) {
+// 7.1.4 ToInteger
+var ceil = Math.ceil;
+var floor = Math.floor;
+module.exports = function (it) {
+  return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
+};
+
+},{}],203:[function(require,module,exports) {
+// 7.1.15 ToLength
+var toInteger = require('./_to-integer');
+var min = Math.min;
+module.exports = function (it) {
+  return it > 0 ? min(toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
+};
+
+},{"./_to-integer":206}],204:[function(require,module,exports) {
+var toInteger = require('./_to-integer');
+var max = Math.max;
+var min = Math.min;
+module.exports = function (index, length) {
+  index = toInteger(index);
+  return index < 0 ? max(index + length, 0) : min(index, length);
+};
+
+},{"./_to-integer":206}],197:[function(require,module,exports) {
+// false -> Array#indexOf
+// true  -> Array#includes
+var toIObject = require('./_to-iobject');
+var toLength = require('./_to-length');
+var toAbsoluteIndex = require('./_to-absolute-index');
+module.exports = function (IS_INCLUDES) {
+  return function ($this, el, fromIndex) {
+    var O = toIObject($this);
+    var length = toLength(O.length);
+    var index = toAbsoluteIndex(fromIndex, length);
+    var value;
+    // Array#includes uses SameValueZero equality algorithm
+    // eslint-disable-next-line no-self-compare
+    if (IS_INCLUDES && el != el) while (length > index) {
+      value = O[index++];
+      // eslint-disable-next-line no-self-compare
+      if (value != value) return true;
+    // Array#indexOf ignores holes, Array#includes - not
+    } else for (;length > index; index++) if (IS_INCLUDES || index in O) {
+      if (O[index] === el) return IS_INCLUDES || index || 0;
+    } return !IS_INCLUDES && -1;
+  };
+};
+
+},{"./_to-iobject":196,"./_to-length":203,"./_to-absolute-index":204}],205:[function(require,module,exports) {
+module.exports = true;
+
+},{}],199:[function(require,module,exports) {
+
+var core = require('./_core');
+var global = require('./_global');
+var SHARED = '__core-js_shared__';
+var store = global[SHARED] || (global[SHARED] = {});
+
+(module.exports = function (key, value) {
+  return store[key] || (store[key] = value !== undefined ? value : {});
+})('versions', []).push({
+  version: core.version,
+  mode: require('./_library') ? 'pure' : 'global',
+  copyright: '© 2018 Denis Pushkarev (zloirock.ru)'
+});
+
+},{"./_core":78,"./_global":158,"./_library":205}],200:[function(require,module,exports) {
+var id = 0;
+var px = Math.random();
+module.exports = function (key) {
+  return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
+};
+
+},{}],198:[function(require,module,exports) {
+var shared = require('./_shared')('keys');
+var uid = require('./_uid');
+module.exports = function (key) {
+  return shared[key] || (shared[key] = uid(key));
+};
+
+},{"./_shared":199,"./_uid":200}],177:[function(require,module,exports) {
+var has = require('./_has');
+var toIObject = require('./_to-iobject');
+var arrayIndexOf = require('./_array-includes')(false);
+var IE_PROTO = require('./_shared-key')('IE_PROTO');
+
+module.exports = function (object, names) {
+  var O = toIObject(object);
+  var i = 0;
+  var result = [];
+  var key;
+  for (key in O) if (key != IE_PROTO) has(O, key) && result.push(key);
+  // Don't enum bug & hidden keys
+  while (names.length > i) if (has(O, key = names[i++])) {
+    ~arrayIndexOf(result, key) || result.push(key);
+  }
+  return result;
+};
+
+},{"./_has":161,"./_to-iobject":196,"./_array-includes":197,"./_shared-key":198}],176:[function(require,module,exports) {
+// IE 8- don't enum bug keys
+module.exports = (
+  'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
+).split(',');
+
+},{}],167:[function(require,module,exports) {
+// 19.1.2.14 / 15.2.3.14 Object.keys(O)
+var $keys = require('./_object-keys-internal');
+var enumBugKeys = require('./_enum-bug-keys');
+
+module.exports = Object.keys || function keys(O) {
+  return $keys(O, enumBugKeys);
+};
+
+},{"./_object-keys-internal":177,"./_enum-bug-keys":176}],168:[function(require,module,exports) {
+exports.f = Object.getOwnPropertySymbols;
+
+},{}],169:[function(require,module,exports) {
+exports.f = {}.propertyIsEnumerable;
+
+},{}],170:[function(require,module,exports) {
+// 7.1.13 ToObject(argument)
+var defined = require('./_defined');
+module.exports = function (it) {
+  return Object(defined(it));
+};
+
+},{"./_defined":184}],134:[function(require,module,exports) {
+'use strict';
+// 19.1.2.1 Object.assign(target, source, ...)
+var getKeys = require('./_object-keys');
+var gOPS = require('./_object-gops');
+var pIE = require('./_object-pie');
+var toObject = require('./_to-object');
+var IObject = require('./_iobject');
+var $assign = Object.assign;
+
+// should work with symbols and should have deterministic property order (V8 bug)
+module.exports = !$assign || require('./_fails')(function () {
+  var A = {};
+  var B = {};
+  // eslint-disable-next-line no-undef
+  var S = Symbol();
+  var K = 'abcdefghijklmnopqrst';
+  A[S] = 7;
+  K.split('').forEach(function (k) { B[k] = k; });
+  return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
+}) ? function assign(target, source) { // eslint-disable-line no-unused-vars
+  var T = toObject(target);
+  var aLen = arguments.length;
+  var index = 1;
+  var getSymbols = gOPS.f;
+  var isEnum = pIE.f;
+  while (aLen > index) {
+    var S = IObject(arguments[index++]);
+    var keys = getSymbols ? getKeys(S).concat(getSymbols(S)) : getKeys(S);
+    var length = keys.length;
+    var j = 0;
+    var key;
+    while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
+  } return T;
+} : $assign;
+
+},{"./_object-keys":167,"./_object-gops":168,"./_object-pie":169,"./_to-object":170,"./_iobject":171,"./_fails":172}],77:[function(require,module,exports) {
+// 19.1.3.1 Object.assign(target, source)
+var $export = require('./_export');
+
+$export($export.S + $export.F, 'Object', { assign: require('./_object-assign') });
+
+},{"./_export":133,"./_object-assign":134}],51:[function(require,module,exports) {
+require('../../modules/es6.object.assign');
+module.exports = require('../../modules/_core').Object.assign;
+
+},{"../../modules/es6.object.assign":77,"../../modules/_core":78}],32:[function(require,module,exports) {
+module.exports = { "default": require("core-js/library/fn/object/assign"), __esModule: true };
+},{"core-js/library/fn/object/assign":51}],20:[function(require,module,exports) {
+"use strict";
+
+exports.__esModule = true;
+
+var _assign = require("../core-js/object/assign");
+
+var _assign2 = _interopRequireDefault(_assign);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = _assign2.default || function (target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i];
+
+    for (var key in source) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        target[key] = source[key];
+      }
+    }
+  }
+
+  return target;
+};
+},{"../core-js/object/assign":32}],24:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8618,7 +8768,7 @@ exports.mapGetters = mapGetters;
 exports.mapActions = mapActions;
 exports.createNamespacedHelpers = createNamespacedHelpers;
 exports.default = index_esm;
-},{}],50:[function(require,module,exports) {
+},{}],81:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -8640,7 +8790,7 @@ function invariant(condition, message) {
     throw new Error(message);
   }
 }
-},{}],28:[function(require,module,exports) {
+},{}],55:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8680,7 +8830,7 @@ var Source = exports.Source = function Source(body, name, locationOffset) {
   !(this.locationOffset.line > 0) ? (0, _invariant2.default)(0, 'line in locationOffset is 1-indexed and must be positive') : void 0;
   !(this.locationOffset.column > 0) ? (0, _invariant2.default)(0, 'column in locationOffset is 1-indexed and must be positive') : void 0;
 };
-},{"../jsutils/invariant":50}],105:[function(require,module,exports) {
+},{"../jsutils/invariant":81}],140:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8717,7 +8867,7 @@ function getLocation(source, position) {
 /**
  * Represents a location in a Source.
  */
-},{}],57:[function(require,module,exports) {
+},{}],100:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8788,7 +8938,7 @@ function whitespace(len) {
 function lpad(len, str) {
   return whitespace(len - str.length) + str;
 }
-},{"../language/location":105}],54:[function(require,module,exports) {
+},{"../language/location":140}],97:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8925,7 +9075,7 @@ GraphQLError.prototype = Object.create(Error.prototype, {
     }
   }
 });
-},{"./printError":57,"../language/location":105}],55:[function(require,module,exports) {
+},{"./printError":100,"../language/location":140}],98:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8951,7 +9101,7 @@ var _GraphQLError = require('./GraphQLError');
 function syntaxError(source, position, description) {
   return new _GraphQLError.GraphQLError('Syntax Error: ' + description, undefined, source, [position]);
 }
-},{"./GraphQLError":54}],56:[function(require,module,exports) {
+},{"./GraphQLError":97}],99:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8983,7 +9133,7 @@ function locatedError(originalError, nodes, path) {
    *
    *  strict
    */
-},{"./GraphQLError":54}],58:[function(require,module,exports) {
+},{"./GraphQLError":97}],101:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -9019,7 +9169,7 @@ function formatError(error) {
     path: error.path
   });
 }
-},{"../jsutils/invariant":50}],36:[function(require,module,exports) {
+},{"../jsutils/invariant":81}],63:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -9070,7 +9220,7 @@ Object.defineProperty(exports, 'formatError', {
     return _formatError.formatError;
   }
 });
-},{"./GraphQLError":54,"./syntaxError":55,"./locatedError":56,"./printError":57,"./formatError":58}],51:[function(require,module,exports) {
+},{"./GraphQLError":97,"./syntaxError":98,"./locatedError":99,"./printError":100,"./formatError":101}],82:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -9138,7 +9288,7 @@ function leadingWhitespace(str) {
 function isBlank(str) {
   return leadingWhitespace(str) === str.length;
 }
-},{}],29:[function(require,module,exports) {
+},{}],56:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -9739,7 +9889,7 @@ function readName(source, start, line, col, prev) {
   }
   return new Tok(TokenKind.NAME, start, position, line, col, prev, slice.call(body, start, position));
 }
-},{"../error":36,"./blockStringValue":51}],30:[function(require,module,exports) {
+},{"../error":63,"./blockStringValue":82}],57:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -9824,7 +9974,7 @@ var Kind = exports.Kind = Object.freeze({
 /**
  * The enum type representing the possible kind values of AST nodes.
  */
-},{}],31:[function(require,module,exports) {
+},{}],58:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -9868,7 +10018,7 @@ var DirectiveLocation = exports.DirectiveLocation = Object.freeze({
 /**
  * The enum type representing the directive location values.
  */
-},{}],24:[function(require,module,exports) {
+},{}],42:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -11222,7 +11372,7 @@ function many(lexer, openKind, parseFn, closeKind) {
   }
   return nodes;
 }
-},{"./source":28,"../error":36,"./lexer":29,"./kinds":30,"./directiveLocation":31}],17:[function(require,module,exports) {
+},{"./source":55,"../error":63,"./lexer":56,"./kinds":57,"./directiveLocation":58}],25:[function(require,module,exports) {
 var parser = require('graphql/language/parser');
 
 var parse = parser.parse;
@@ -11404,17 +11554,150 @@ gql.disableExperimentalFragmentVariables = disableExperimentalFragmentVariables;
 
 module.exports = gql;
 
-},{"graphql/language/parser":24}],20:[function(require,module,exports) {
-"use strict";
+},{"graphql/language/parser":42}],44:[function(require,module,exports) {
+module.exports = {
+  "name": "vuex-apollo",
+  "version": "1.0.0",
+  "description": "Vuex Setup with Apollo Integration",
+  "main": "dist/vuex-apollo.umd.js",
+  "module": "dist/vuex-apollo.esm.js",
+  "unpkg": "dist/vuex-apollo.min.js",
+  "scripts": {
+    "build:browser": "parcel build src/index.js --out-dir dist --out-file vuex-apollo.min.js --target browser",
+    "build:es": "parcel build src/index.js --out-dir dist --out-file vuex-apollo.esm.js --target electron",
+    "build:umd": "parcel build src/index.js --out-dir dist --out-file vuex-apollo.umd.js --target node",
+    "build": "npm run build:browser && npm run build:es && npm run build:umd",
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs",
+    "demo": "parcel tests/demo/index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alajfit/vuex-apollo.git"
+  },
+  "keywords": ["vuex", "apollo", "graphql"],
+  "author": "Alan J. Fitzpatrick <alajfit@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alajfit/vuex-apollo/issues"
+  },
+  "homepage": "https://github.com/alajfit/vuex-apollo#readme",
+  "devDependencies": {
+    "@vue/component-compiler-utils": "^2.1.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-es2015": "^6.24.1",
+    "node-sass": "^4.9.1",
+    "parcel": "^1.9.4",
+    "parcel-bundler": "^1.9.4",
+    "parcel-plugin-vue": "^1.5.0",
+    "vue": "^2.5.16",
+    "vuepress": "^0.10.2"
+  },
+  "dependencies": {
+    "apollo-boost": "^0.1.10",
+    "graphql": "^0.13.2",
+    "graphql-tag": "^2.9.2",
+    "vuex": "^3.0.1"
+  }
+};
+},{}],46:[function(require,module,exports) {
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-exports.default = function (Vuex) {
-    return new Vuex.Store({});
+var _vuex = require('vuex');
+
+var _vuex2 = _interopRequireDefault(_vuex);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function isPromise(val) {
+    return val && typeof val.then === 'function';
+}
+
+function patchAction(store, type, handler, local) {
+    var entry = store._actions[type] || (store._actions[type] = []);
+
+    if (entry.length > 0) entry.pop();
+
+    entry.push(function wrappedActionHandler(payload, cb) {
+        var res = handler({
+            dispatch: local.dispatch,
+            commit: local.commit,
+            getters: local.getters,
+            state: local.state,
+            rootGetters: store.getters,
+            rootState: store.state,
+            apollo: store.$apollo,
+            gql: store.$gql
+        }, payload, cb);
+
+        if (!isPromise(res)) res = Promise.resolve(res);
+        if (store._devtoolHook) {
+            return res.catch(function (err) {
+                store._devtoolHook.emit('vuex:error', err);
+                throw err;
+            });
+        } else {
+            return res;
+        }
+    });
+}
+
+function patchModule(store, path, module, hot) {
+    var namespace = store._modules.getNamespace(path);
+    var local = module.context;
+
+    module.forEachAction(function (action, key) {
+        return patchAction(store, namespace + key, action, local);
+    });
+    module.forEachChild(function (child, key) {
+        return patchModule(store, path.concat(key), child, hot);
+    });
+}
+
+exports.default = function (store) {
+    patchModule(store, [], store._modules.root);
+
+    var orig = _vuex2.default.Store.prototype.registerModule;
+    _vuex2.default.Store.prototype.registerModule = function registerModule(path, rawModule) {
+        orig.call(this, path, rawModule);
+        patchModule(this, [].concat(path), this._modules.get([path]));
+    };
 };
-},{}],107:[function(require,module,exports) {
+},{"vuex":24}],28:[function(require,module,exports) {
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _package = require('../../package.json');
+
+var _apolloGqlPlugin = require('./plugins/apollo-gql-plugin');
+
+var _apolloGqlPlugin2 = _interopRequireDefault(_apolloGqlPlugin);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = function (Vuex, _ref) {
+    var apollo = _ref.apollo,
+        gql = _ref.gql;
+
+    var store = new Vuex.Store({
+        state: { version: _package.version },
+        plugins: [_apolloGqlPlugin2.default]
+    });
+    store.$apollo = apollo;
+    store.$gql = gql;
+
+    return store;
+};
+},{"../../package.json":44,"./plugins/apollo-gql-plugin":46}],139:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -11833,7 +12116,7 @@ function getVisitFn(visitor, kind, isLeaving) {
     }
   }
 }
-},{}],69:[function(require,module,exports) {
+},{}],90:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12173,7 +12456,7 @@ function printBlockString(value, isDescription) {
   var escaped = value.replace(/"""/g, '\\"""');
   return (value[0] === ' ' || value[0] === '\t') && value.indexOf('\n') === -1 ? '"""' + escaped.replace(/"$/, '"\n') + '"""' : '"""\n' + (isDescription ? escaped : indent(escaped)) + '\n"""';
 }
-},{"./visitor":107}],138:[function(require,module,exports) {
+},{"./visitor":139}],185:[function(require,module,exports) {
 'use strict';
 
 module.exports = function (data, opts) {
@@ -12234,7 +12517,7 @@ module.exports = function (data, opts) {
     })(data);
 };
 
-},{}],116:[function(require,module,exports) {
+},{}],149:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12460,7 +12743,7 @@ function valueFromNode(node, onVariable) {
     }
 }
 //# sourceMappingURL=storeUtils.js.map
-},{"fast-json-stable-stringify":138}],112:[function(require,module,exports) {
+},{"fast-json-stable-stringify":185}],145:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12577,7 +12860,7 @@ function hasDirectives(names, doc) {
     });
 }
 //# sourceMappingURL=directives.js.map
-},{"./storeUtils":116}],113:[function(require,module,exports) {
+},{"./storeUtils":149}],146:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -12658,7 +12941,7 @@ function getFragmentQueryDocument(document, fragmentName) {
     return query;
 }
 //# sourceMappingURL=fragments.js.map
-},{}],117:[function(require,module,exports) {
+},{}],150:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12681,7 +12964,7 @@ function assign(target) {
     return target;
 }
 //# sourceMappingURL=assign.js.map
-},{}],114:[function(require,module,exports) {
+},{}],148:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12846,7 +13129,7 @@ function variablesInOperation(operation) {
     return names;
 }
 //# sourceMappingURL=getFromAST.js.map
-},{"./util/assign":117,"./storeUtils":116}],118:[function(require,module,exports) {
+},{"./util/assign":150,"./storeUtils":149}],151:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -12879,7 +13162,7 @@ function cloneDeep(value) {
     return value;
 }
 //# sourceMappingURL=cloneDeep.js.map
-},{}],115:[function(require,module,exports) {
+},{}],147:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -13066,7 +13349,7 @@ function getDirectivesFromDocument(directives, doc, includeAllFragments) {
     return isNotEmpty(operation, fragments) ? docClone : null;
 }
 //# sourceMappingURL=transform.js.map
-},{"./util/cloneDeep":118,"./getFromAST":114}],127:[function(require,module,exports) {
+},{"./util/cloneDeep":151,"./getFromAST":148}],186:[function(require,module,exports) {
 
 // shim for using process in browser
 var process = module.exports = {};
@@ -13253,7 +13536,7 @@ process.chdir = function (dir) {
 process.umask = function () {
     return 0;
 };
-},{}],119:[function(require,module,exports) {
+},{}],152:[function(require,module,exports) {
 var process = require("process");
 'use strict';
 
@@ -13285,7 +13568,7 @@ function isTest() {
     return isEnv('test') === true;
 }
 //# sourceMappingURL=environment.js.map
-},{"process":127}],120:[function(require,module,exports) {
+},{"process":186}],153:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -13306,7 +13589,7 @@ function graphQLResultHasError(result) {
     return result.errors && result.errors.length;
 }
 //# sourceMappingURL=errorHandling.js.map
-},{}],121:[function(require,module,exports) {
+},{}],154:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -13353,7 +13636,7 @@ function isEqual(a, b) {
     return false;
 }
 //# sourceMappingURL=isEqual.js.map
-},{}],122:[function(require,module,exports) {
+},{}],155:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -13386,7 +13669,7 @@ function maybeDeepFreeze(obj) {
     return obj;
 }
 //# sourceMappingURL=maybeDeepFreeze.js.map
-},{"./environment":119}],123:[function(require,module,exports) {
+},{"./environment":152}],156:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -13426,7 +13709,7 @@ function warnOnceInDevelopment(msg, type) {
     }
 }
 //# sourceMappingURL=warnOnce.js.map
-},{"./environment":119}],124:[function(require,module,exports) {
+},{"./environment":152}],157:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -13448,7 +13731,7 @@ function stripSymbols(data) {
   return JSON.parse(JSON.stringify(data));
 }
 //# sourceMappingURL=stripSymbols.js.map
-},{}],87:[function(require,module,exports) {
+},{}],118:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -13610,7 +13893,7 @@ Object.keys(_stripSymbols).forEach(function (key) {
     }
   });
 });
-},{"./directives":112,"./fragments":113,"./getFromAST":114,"./transform":115,"./storeUtils":116,"./util/assign":117,"./util/cloneDeep":118,"./util/environment":119,"./util/errorHandling":120,"./util/isEqual":121,"./util/maybeDeepFreeze":122,"./util/warnOnce":123,"./util/stripSymbols":124}],66:[function(require,module,exports) {
+},{"./directives":145,"./fragments":146,"./getFromAST":148,"./transform":147,"./storeUtils":149,"./util/assign":150,"./util/cloneDeep":151,"./util/environment":152,"./util/errorHandling":153,"./util/isEqual":154,"./util/maybeDeepFreeze":155,"./util/warnOnce":156,"./util/stripSymbols":157}],87:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -13666,7 +13949,7 @@ function isNetworkRequestInFlight(networkStatus) {
   return networkStatus < 7;
 }
 //# sourceMappingURL=networkStatus.js.map
-},{}],139:[function(require,module,exports) {
+},{}],191:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -14272,10 +14555,10 @@ if (hasSymbols()) {
     configurabe: true
   });
 }
-},{}],126:[function(require,module,exports) {
+},{}],178:[function(require,module,exports) {
 module.exports = require('./lib/Observable.js').Observable;
 
-},{"./lib/Observable.js":139}],111:[function(require,module,exports) {
+},{"./lib/Observable.js":191}],144:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -14291,7 +14574,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var Observable = exports.Observable = _zenObservable2.default;
 //# sourceMappingURL=zenObservable.js.map
-},{"zen-observable":126}],86:[function(require,module,exports) {
+},{"zen-observable":178}],117:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -14311,7 +14594,7 @@ Object.keys(_zenObservable).forEach(function (key) {
 });
 exports.default = _zenObservable.Observable;
 //# sourceMappingURL=index.js.map
-},{"./zenObservable":111}],77:[function(require,module,exports) {
+},{"./zenObservable":144}],109:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -14459,7 +14742,7 @@ function getKey(operation) {
     return (0, _printer.print)(operation.query) + "|" + JSON.stringify(operation.variables) + "|" + operation.operationName;
 }
 //# sourceMappingURL=linkUtils.js.map
-},{"apollo-utilities":87,"zen-observable-ts":86,"graphql/language/printer":69}],76:[function(require,module,exports) {
+},{"apollo-utilities":118,"zen-observable-ts":117,"graphql/language/printer":90}],108:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -14558,7 +14841,7 @@ function execute(link, operation) {
     return link.request((0, _linkUtils.createOperation)(operation.context, (0, _linkUtils.transformOperation)((0, _linkUtils.validateOperation)(operation)))) || _zenObservableTs2.default.of();
 }
 //# sourceMappingURL=link.js.map
-},{"zen-observable-ts":86,"./linkUtils":77}],39:[function(require,module,exports) {
+},{"zen-observable-ts":117,"./linkUtils":109}],65:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -14619,7 +14902,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 exports.Observable = _zenObservableTs2.default;
 //# sourceMappingURL=index.js.map
-},{"./link":76,"./linkUtils":77,"zen-observable-ts":86}],140:[function(require,module,exports) {
+},{"./link":108,"./linkUtils":109,"zen-observable-ts":117}],174:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -14643,7 +14926,7 @@ function symbolObservablePonyfill(root) {
 
 	return result;
 };
-},{}],125:[function(require,module,exports) {
+},{}],163:[function(require,module,exports) {
 var global = arguments[3];
 'use strict';
 
@@ -14674,7 +14957,7 @@ if (typeof self !== 'undefined') {
 
 var result = (0, _ponyfill2.default)(root);
 exports.default = result;
-},{"./ponyfill.js":140}],106:[function(require,module,exports) {
+},{"./ponyfill.js":174}],138:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -14723,7 +15006,7 @@ var Observable = /** @class */function (_super) {
 }(_apolloLink.Observable);
 exports.Observable = Observable;
 //# sourceMappingURL=Observable.js.map
-},{"apollo-link":39,"symbol-observable":125}],68:[function(require,module,exports) {
+},{"apollo-link":65,"symbol-observable":163}],89:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -14795,7 +15078,7 @@ var ApolloError = /** @class */function (_super) {
 }(Error);
 exports.ApolloError = ApolloError;
 //# sourceMappingURL=ApolloError.js.map
-},{}],67:[function(require,module,exports) {
+},{}],88:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -14808,7 +15091,7 @@ var FetchType = exports.FetchType = undefined;
     FetchType[FetchType["poll"] = 3] = "poll";
 })(FetchType || (exports.FetchType = FetchType = {}));
 //# sourceMappingURL=types.js.map
-},{}],65:[function(require,module,exports) {
+},{}],86:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -15244,7 +15527,7 @@ var ObservableQuery = /** @class */function (_super) {
 }(_Observable.Observable);
 exports.ObservableQuery = ObservableQuery;
 //# sourceMappingURL=ObservableQuery.js.map
-},{"apollo-utilities":87,"./networkStatus":66,"../util/Observable":106,"../errors/ApolloError":68,"./types":67}],141:[function(require,module,exports) {
+},{"apollo-utilities":118,"./networkStatus":87,"../util/Observable":138,"../errors/ApolloError":89,"./types":88}],192:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -15344,7 +15627,7 @@ var DedupLink = /** @class */function (_super) {
 }(_apolloLink.ApolloLink);
 exports.DedupLink = DedupLink;
 //# sourceMappingURL=dedupLink.js.map
-},{"apollo-link":39}],133:[function(require,module,exports) {
+},{"apollo-link":65}],182:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -15362,7 +15645,7 @@ Object.keys(_dedupLink).forEach(function (key) {
     }
   });
 });
-},{"./dedupLink":141}],128:[function(require,module,exports) {
+},{"./dedupLink":192}],179:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -15511,7 +15794,7 @@ var QueryScheduler = /** @class */function () {
 }();
 exports.QueryScheduler = QueryScheduler;
 //# sourceMappingURL=scheduler.js.map
-},{"../core/types":67,"../core/ObservableQuery":65,"../core/networkStatus":66}],129:[function(require,module,exports) {
+},{"../core/types":88,"../core/ObservableQuery":86,"../core/networkStatus":87}],180:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -15558,7 +15841,7 @@ var MutationStore = /** @class */function () {
 }();
 exports.MutationStore = MutationStore;
 //# sourceMappingURL=mutations.js.map
-},{}],130:[function(require,module,exports) {
+},{}],181:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -15695,7 +15978,7 @@ var QueryStore = /** @class */function () {
 }();
 exports.QueryStore = QueryStore;
 //# sourceMappingURL=queries.js.map
-},{"graphql/language/printer":69,"apollo-utilities":87,"../core/networkStatus":66}],103:[function(require,module,exports) {
+},{"graphql/language/printer":90,"apollo-utilities":118,"../core/networkStatus":87}],136:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -16652,7 +16935,7 @@ var QueryManager = /** @class */function () {
 }();
 exports.QueryManager = QueryManager;
 //# sourceMappingURL=QueryManager.js.map
-},{"apollo-link":39,"graphql/language/printer":69,"apollo-link-dedup":133,"apollo-utilities":87,"../scheduler/scheduler":128,"../errors/ApolloError":68,"../util/Observable":106,"../data/mutations":129,"../data/queries":130,"./ObservableQuery":65,"./networkStatus":66,"./types":67}],104:[function(require,module,exports) {
+},{"apollo-link":65,"graphql/language/printer":90,"apollo-link-dedup":182,"apollo-utilities":118,"../scheduler/scheduler":179,"../errors/ApolloError":89,"../util/Observable":138,"../data/mutations":180,"../data/queries":181,"./ObservableQuery":86,"./networkStatus":87,"./types":88}],137:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -16816,9 +17099,9 @@ var DataStore = /** @class */function () {
 }();
 exports.DataStore = DataStore;
 //# sourceMappingURL=store.js.map
-},{"apollo-utilities":87}],102:[function(require,module,exports) {
+},{"apollo-utilities":118}],135:[function(require,module,exports) {
 exports.version = "2.3.5"
-},{}],64:[function(require,module,exports) {
+},{}],85:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -17188,7 +17471,7 @@ var ApolloClient = /** @class */function () {
 }();
 exports.default = ApolloClient;
 //# sourceMappingURL=ApolloClient.js.map
-},{"apollo-link":39,"apollo-utilities":87,"./core/QueryManager":103,"./data/store":104,"./version":102}],38:[function(require,module,exports) {
+},{"apollo-link":65,"apollo-utilities":118,"./core/QueryManager":136,"./data/store":137,"./version":135}],64:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -17254,7 +17537,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 exports.ApolloClient = _ApolloClient2.default;
 exports.default = _ApolloClient2.default;
 //# sourceMappingURL=index.js.map
-},{"graphql/language/printer":69,"./core/ObservableQuery":65,"./core/networkStatus":66,"./core/types":67,"./errors/ApolloError":68,"./ApolloClient":64}],136:[function(require,module,exports) {
+},{"graphql/language/printer":90,"./core/ObservableQuery":86,"./core/networkStatus":87,"./core/types":88,"./errors/ApolloError":89,"./ApolloClient":85}],173:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -17357,7 +17640,7 @@ var justTypenameQuery = exports.justTypenameQuery = {
     }]
 };
 //# sourceMappingURL=utils.js.map
-},{}],134:[function(require,module,exports) {
+},{}],162:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -17457,7 +17740,7 @@ var ApolloCache = /** @class */function () {
 }();
 exports.ApolloCache = ApolloCache;
 //# sourceMappingURL=cache.js.map
-},{"apollo-utilities":87,"./utils":136}],137:[function(require,module,exports) {
+},{"apollo-utilities":118,"./utils":173}],175:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -17466,7 +17749,7 @@ Object.defineProperty(exports, "__esModule", {
 var Cache = exports.Cache = undefined;
 (function (Cache) {})(Cache || (exports.Cache = Cache = {}));
 //# sourceMappingURL=Cache.js.map
-},{}],135:[function(require,module,exports) {
+},{}],164:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -17484,7 +17767,7 @@ Object.keys(_Cache).forEach(function (key) {
     }
   });
 });
-},{"./Cache":137}],110:[function(require,module,exports) {
+},{"./Cache":175}],142:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -17514,7 +17797,7 @@ Object.keys(_types).forEach(function (key) {
     }
   });
 });
-},{"./cache":134,"./types":135}],82:[function(require,module,exports) {
+},{"./cache":162,"./types":164}],105:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -17622,7 +17905,7 @@ var IntrospectionFragmentMatcher = /** @class */function () {
 }();
 exports.IntrospectionFragmentMatcher = IntrospectionFragmentMatcher;
 //# sourceMappingURL=fragmentMatcher.js.map
-},{"apollo-utilities":87}],83:[function(require,module,exports) {
+},{"apollo-utilities":118}],106:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -17661,7 +17944,7 @@ function defaultNormalizedCacheFactory(seed) {
     return new ObjectCache(seed);
 }
 //# sourceMappingURL=objectCache.js.map
-},{}],81:[function(require,module,exports) {
+},{}],104:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -18054,7 +18337,7 @@ function processArrayValue(value, generatedId, selectionSet, context) {
     });
 }
 //# sourceMappingURL=writeToStore.js.map
-},{"graphql/language/printer":69,"apollo-utilities":87,"./objectCache":83}],132:[function(require,module,exports) {
+},{"graphql/language/printer":90,"apollo-utilities":118,"./objectCache":106}],166:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -18203,7 +18486,7 @@ function merge(dest, src) {
     }
 }
 //# sourceMappingURL=graphql.js.map
-},{"apollo-utilities":87}],131:[function(require,module,exports) {
+},{"apollo-utilities":118}],165:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -18289,7 +18572,7 @@ function propType(doc) {
     });
 }
 //# sourceMappingURL=utilities.js.map
-},{"./graphql":132}],108:[function(require,module,exports) {
+},{"./graphql":166}],141:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -18322,7 +18605,7 @@ var _graphql = require('./graphql');
 
 exports.default = _graphql.graphql;
 //# sourceMappingURL=index.js.map
-},{"./utilities":131,"./graphql":132}],80:[function(require,module,exports) {
+},{"./utilities":165,"./graphql":166}],103:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -18601,7 +18884,7 @@ function areNestedArrayItemsStrictlyEqual(a, b) {
     });
 }
 //# sourceMappingURL=readFromStore.js.map
-},{"graphql-anywhere":108,"apollo-utilities":87}],84:[function(require,module,exports) {
+},{"graphql-anywhere":141,"apollo-utilities":118}],107:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -18666,7 +18949,7 @@ function record(startingState, transaction) {
     return recordingCache.record(transaction);
 }
 //# sourceMappingURL=recordingCache.js.map
-},{}],79:[function(require,module,exports) {
+},{}],102:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -18937,7 +19220,7 @@ var InMemoryCache = /** @class */function (_super) {
 }(_apolloCache.ApolloCache);
 exports.InMemoryCache = InMemoryCache;
 //# sourceMappingURL=inMemoryCache.js.map
-},{"apollo-cache":110,"apollo-utilities":87,"./fragmentMatcher":82,"./writeToStore":81,"./readFromStore":80,"./objectCache":83,"./recordingCache":84}],40:[function(require,module,exports) {
+},{"apollo-cache":142,"apollo-utilities":118,"./fragmentMatcher":105,"./writeToStore":104,"./readFromStore":103,"./objectCache":106,"./recordingCache":107}],66:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19018,7 +19301,7 @@ Object.keys(_recordingCache).forEach(function (key) {
     }
   });
 });
-},{"./inMemoryCache":79,"./readFromStore":80,"./writeToStore":81,"./fragmentMatcher":82,"./objectCache":83,"./recordingCache":84}],109:[function(require,module,exports) {
+},{"./inMemoryCache":102,"./readFromStore":103,"./writeToStore":104,"./fragmentMatcher":105,"./objectCache":106,"./recordingCache":107}],143:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19157,7 +19440,7 @@ var selectURI = exports.selectURI = function (operation, fallbackURI) {
     }
 };
 //# sourceMappingURL=index.js.map
-},{"graphql/language/printer":69}],78:[function(require,module,exports) {
+},{"graphql/language/printer":90}],110:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19374,7 +19657,7 @@ var HttpLink = /** @class */function (_super) {
 }(_apolloLink.ApolloLink);
 exports.HttpLink = HttpLink;
 //# sourceMappingURL=httpLink.js.map
-},{"apollo-link":39,"apollo-link-http-common":109}],41:[function(require,module,exports) {
+},{"apollo-link":65,"apollo-link-http-common":143}],67:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19392,7 +19675,7 @@ Object.keys(_httpLink).forEach(function (key) {
     }
   });
 });
-},{"./httpLink":78}],88:[function(require,module,exports) {
+},{"./httpLink":110}],119:[function(require,module,exports) {
 var define;
 var global = arguments[3];
 (function (global, factory) {
@@ -19609,7 +19892,7 @@ var global = arguments[3];
 })));
 //# sourceMappingURL=async.js.map
 
-},{"apollo-utilities":87}],85:[function(require,module,exports) {
+},{"apollo-utilities":118}],111:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19635,7 +19918,7 @@ function removeClientSetsFromDocument(query) {
     return docClone;
 }
 //# sourceMappingURL=utils.js.map
-},{"apollo-utilities":87}],42:[function(require,module,exports) {
+},{"apollo-utilities":118}],68:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19757,7 +20040,7 @@ var withClientState = exports.withClientState = function (clientStateConfig) {
     }(_apolloLink.ApolloLink))();
 };
 //# sourceMappingURL=index.js.map
-},{"apollo-link":39,"apollo-utilities":87,"graphql-anywhere/lib/async":88,"./utils":85}],43:[function(require,module,exports) {
+},{"apollo-link":65,"apollo-utilities":118,"graphql-anywhere/lib/async":119,"./utils":111}],69:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19859,7 +20142,7 @@ var ErrorLink = /** @class */function (_super) {
 }(_apolloLink.ApolloLink);
 exports.ErrorLink = ErrorLink;
 //# sourceMappingURL=index.js.map
-},{"apollo-link":39}],26:[function(require,module,exports) {
+},{"apollo-link":65}],48:[function(require,module,exports) {
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -19971,7 +20254,7 @@ var DefaultClient = (function (_super) {
 }(apollo_client_1.default));
 exports.default = DefaultClient;
 //# sourceMappingURL=index.js.map
-},{"apollo-client":38,"apollo-link":39,"apollo-cache-inmemory":40,"apollo-link-http":41,"apollo-link-state":42,"apollo-link-error":43,"graphql-tag":17}],21:[function(require,module,exports) {
+},{"apollo-client":64,"apollo-link":65,"apollo-cache-inmemory":66,"apollo-link-http":67,"apollo-link-state":68,"apollo-link-error":69,"graphql-tag":25}],29:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19989,12 +20272,13 @@ exports.default = function (options) {
         uri: options.uri
     });
 };
-},{"apollo-boost":26}],10:[function(require,module,exports) {
+},{"apollo-boost":48}],14:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.createNamespacedHelpers = exports.mapState = exports.mapGetters = exports.mapActions = undefined;
 
 var _vuex = require('vuex');
 
@@ -20017,45 +20301,351 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var VuexApollo = {
     install: function install(Vue, options) {
         Vue.use(_vuex2.default);
-        var newStore = (0, _store2.default)(_vuex2.default);
-        newStore._modules.root.context.apollo = (0, _apollo2.default)(options);
-        newStore._modules.root.context.gql = _graphqlTag2.default;
+        var apollo = (0, _apollo2.default)(options);
+        var store = (0, _store2.default)(_vuex2.default, { apollo: apollo, gql: _graphqlTag2.default });
+
         options.modules.forEach(function (module) {
-            newStore.registerModule(module.name, module.store);
+            return store.registerModule(module.name, module.store);
         });
-        Vue.prototype.$store = newStore;
+
+        Vue.prototype.$store = store;
     }
 };
 
+var mapActions = exports.mapActions = _vuex.mapActions;
+var mapGetters = exports.mapGetters = _vuex.mapGetters;
+var mapState = exports.mapState = _vuex.mapState;
+var createNamespacedHelpers = exports.createNamespacedHelpers = _vuex.createNamespacedHelpers;
+
 exports.default = VuexApollo;
-},{"vuex":16,"graphql-tag":17,"./store":20,"./apollo":21}],143:[function(require,module,exports) {
-"use strict";
+},{"vuex":24,"graphql-tag":25,"./store":28,"./apollo":29}],18:[function(require,module,exports) {
+var Vue // late bind
+var version
+var map = (window.__VUE_HOT_MAP__ = Object.create(null))
+var installed = false
+var isBrowserify = false
+var initHookName = 'beforeCreate'
+
+exports.install = function (vue, browserify) {
+  if (installed) { return }
+  installed = true
+
+  Vue = vue.__esModule ? vue.default : vue
+  version = Vue.version.split('.').map(Number)
+  isBrowserify = browserify
+
+  // compat with < 2.0.0-alpha.7
+  if (Vue.config._lifecycleHooks.indexOf('init') > -1) {
+    initHookName = 'init'
+  }
+
+  exports.compatible = version[0] >= 2
+  if (!exports.compatible) {
+    console.warn(
+      '[HMR] You are using a version of vue-hot-reload-api that is ' +
+        'only compatible with Vue.js core ^2.0.0.'
+    )
+    return
+  }
+}
+
+/**
+ * Create a record for a hot module, which keeps track of its constructor
+ * and instances
+ *
+ * @param {String} id
+ * @param {Object} options
+ */
+
+exports.createRecord = function (id, options) {
+  if(map[id]) { return }
+  
+  var Ctor = null
+  if (typeof options === 'function') {
+    Ctor = options
+    options = Ctor.options
+  }
+  makeOptionsHot(id, options)
+  map[id] = {
+    Ctor: Ctor,
+    options: options,
+    instances: []
+  }
+}
+
+/**
+ * Check if module is recorded
+ *
+ * @param {String} id
+ */
+
+exports.isRecorded = function (id) {
+  return typeof map[id] !== 'undefined'
+}
+
+/**
+ * Make a Component options object hot.
+ *
+ * @param {String} id
+ * @param {Object} options
+ */
+
+function makeOptionsHot(id, options) {
+  if (options.functional) {
+    var render = options.render
+    options.render = function (h, ctx) {
+      var instances = map[id].instances
+      if (ctx && instances.indexOf(ctx.parent) < 0) {
+        instances.push(ctx.parent)
+      }
+      return render(h, ctx)
+    }
+  } else {
+    injectHook(options, initHookName, function() {
+      var record = map[id]
+      if (!record.Ctor) {
+        record.Ctor = this.constructor
+      }
+      record.instances.push(this)
+    })
+    injectHook(options, 'beforeDestroy', function() {
+      var instances = map[id].instances
+      instances.splice(instances.indexOf(this), 1)
+    })
+  }
+}
+
+/**
+ * Inject a hook to a hot reloadable component so that
+ * we can keep track of it.
+ *
+ * @param {Object} options
+ * @param {String} name
+ * @param {Function} hook
+ */
+
+function injectHook(options, name, hook) {
+  var existing = options[name]
+  options[name] = existing
+    ? Array.isArray(existing) ? existing.concat(hook) : [existing, hook]
+    : [hook]
+}
+
+function tryWrap(fn) {
+  return function (id, arg) {
+    try {
+      fn(id, arg)
+    } catch (e) {
+      console.error(e)
+      console.warn(
+        'Something went wrong during Vue component hot-reload. Full reload required.'
+      )
+    }
+  }
+}
+
+function updateOptions (oldOptions, newOptions) {
+  for (var key in oldOptions) {
+    if (!(key in newOptions)) {
+      delete oldOptions[key]
+    }
+  }
+  for (var key$1 in newOptions) {
+    oldOptions[key$1] = newOptions[key$1]
+  }
+}
+
+exports.rerender = tryWrap(function (id, options) {
+  var record = map[id]
+  if (!options) {
+    record.instances.slice().forEach(function (instance) {
+      instance.$forceUpdate()
+    })
+    return
+  }
+  if (typeof options === 'function') {
+    options = options.options
+  }
+  if (record.Ctor) {
+    record.Ctor.options.render = options.render
+    record.Ctor.options.staticRenderFns = options.staticRenderFns
+    record.instances.slice().forEach(function (instance) {
+      instance.$options.render = options.render
+      instance.$options.staticRenderFns = options.staticRenderFns
+      // reset static trees
+      // pre 2.5, all static trees are cahced together on the instance
+      if (instance._staticTrees) {
+        instance._staticTrees = []
+      }
+      // 2.5.0
+      if (Array.isArray(record.Ctor.options.cached)) {
+        record.Ctor.options.cached = []
+      }
+      // 2.5.3
+      if (Array.isArray(instance.$options.cached)) {
+        instance.$options.cached = []
+      }
+      // post 2.5.4: v-once trees are cached on instance._staticTrees.
+      // Pure static trees are cached on the staticRenderFns array
+      // (both already reset above)
+      instance.$forceUpdate()
+    })
+  } else {
+    // functional or no instance created yet
+    record.options.render = options.render
+    record.options.staticRenderFns = options.staticRenderFns
+
+    // handle functional component re-render
+    if (record.options.functional) {
+      // rerender with full options
+      if (Object.keys(options).length > 2) {
+        updateOptions(record.options, options)
+      } else {
+        // template-only rerender.
+        // need to inject the style injection code for CSS modules
+        // to work properly.
+        var injectStyles = record.options._injectStyles
+        if (injectStyles) {
+          var render = options.render
+          record.options.render = function (h, ctx) {
+            injectStyles.call(ctx)
+            return render(h, ctx)
+          }
+        }
+      }
+      record.options._Ctor = null
+      // 2.5.3
+      if (Array.isArray(record.options.cached)) {
+        record.options.cached = []
+      }
+      record.instances.slice().forEach(function (instance) {
+        instance.$forceUpdate()
+      })
+    }
+  }
+})
+
+exports.reload = tryWrap(function (id, options) {
+  var record = map[id]
+  if (options) {
+    if (typeof options === 'function') {
+      options = options.options
+    }
+    makeOptionsHot(id, options)
+    if (record.Ctor) {
+      if (version[1] < 2) {
+        // preserve pre 2.2 behavior for global mixin handling
+        record.Ctor.extendOptions = options
+      }
+      var newCtor = record.Ctor.super.extend(options)
+      record.Ctor.options = newCtor.options
+      record.Ctor.cid = newCtor.cid
+      record.Ctor.prototype = newCtor.prototype
+      if (newCtor.release) {
+        // temporary global mixin strategy used in < 2.0.0-alpha.6
+        newCtor.release()
+      }
+    } else {
+      updateOptions(record.options, options)
+    }
+  }
+  record.instances.slice().forEach(function (instance) {
+    if (instance.$vnode && instance.$vnode.context) {
+      instance.$vnode.context.$forceUpdate()
+    } else {
+      console.warn(
+        'Root or manually mounted instance modified. Full reload required.'
+      )
+    }
+  })
+})
+
+},{}],10:[function(require,module,exports) {
+var __vueify_style_dispose__ = require("vueify/lib/insert-css").insert("/* line 40, stdin */\n#app {\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n  align-items: center;\n  color: #56b983; }\n  /* line 49, stdin */\n  #app .user .user-avatar {\n    width: 200px;\n    height: 200px; }");(function () {
+    'use strict';
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+
+    var _extends2 = require('babel-runtime/helpers/extends');
+
+    var _extends3 = _interopRequireDefault(_extends2);
+
+    var _src = require('../../../src');
+
+    function _interopRequireDefault(obj) {
+        return obj && obj.__esModule ? obj : { default: obj };
+    }
+
+    exports.default = {
+        name: 'app',
+        computed: (0, _extends3.default)({}, (0, _src.mapState)('user', {
+            avatar: 'avatar',
+            email: 'email'
+        }), (0, _src.mapGetters)({
+            name: 'user/fullName'
+        })),
+        methods: (0, _extends3.default)({}, (0, _src.mapActions)({
+            newUser: 'user/GET_USER_INFO'
+        }))
+    };
+})();
+if (module.exports.__esModule) module.exports = module.exports.default;
+var __vue__options__ = typeof module.exports === "function" ? module.exports.options : module.exports;
+if (__vue__options__.functional) {
+    console.error("[vueify] functional components are not supported and should be defined in plain js files using render functions.");
+}
+__vue__options__.render = function render() {
+    var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c('div', { attrs: { "id": "app" } }, [_c('h1', [_vm._v("Testing Vuex Apollo")]), _vm._v(" "), _c('div', { staticClass: "user" }, [_c('img', { staticClass: "user-avatar", attrs: { "src": _vm.avatar } }), _vm._v(" "), _c('h3', [_vm._v("Name: " + _vm._s(_vm.name))]), _vm._v(" "), _c('h3', [_vm._v("Email: " + _vm._s(_vm.email))])]), _vm._v(" "), _c('p', [_c('button', { on: { "click": _vm.newUser } }, [_vm._v("Get New User")])])]);
+};
+__vue__options__.staticRenderFns = [];
+if (module.hot) {
+    (function () {
+        var hotAPI = require("vue-hot-reload-api");
+        hotAPI.install(require("vue"), true);
+        if (!hotAPI.compatible) return;
+        module.hot.accept();
+        module.hot.dispose(__vueify_style_dispose__);
+        if (!module.hot.data) {
+            hotAPI.createRecord("data-v-d19d7684", __vue__options__);
+        } else {
+            hotAPI.reload("data-v-d19d7684", __vue__options__);
+        }
+    })();
+}
+},{"vueify/lib/insert-css":19,"babel-runtime/helpers/extends":20,"../../../src":14,"vue-hot-reload-api":18,"vue":12}],34:[function(require,module,exports) {
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 var state = exports.state = {
-    listings: []
+    avatar: '',
+    email: '',
+    firstName: '',
+    id: '',
+    lastName: ''
 };
-},{}],144:[function(require,module,exports) {
+},{}],35:[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 var getters = exports.getters = {
-    listingsCount: function listingsCount(state) {
-        return state.listings.length;
+    fullName: function fullName(state) {
+        return state.firstName + " " + state.lastName;
     }
 };
-},{}],147:[function(require,module,exports) {
+},{}],53:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var GET_LATEST_LISTINGS = exports.GET_LATEST_LISTINGS = 'GET_LATEST_LISTINGS';
-},{}],145:[function(require,module,exports) {
+var GET_USER_INFO = exports.GET_USER_INFO = 'GET_USER_INFO';
+},{}],36:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -20063,7 +20653,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.actions = undefined;
 
-var _templateObject = _taggedTemplateLiteral(['\n            query newListings {\n                graphQLHub\n                reddit {\n                    subreddit(name: "movies"){\n                        newListings(limit: 20) {\n                            title\n                            comments {\n                                body\n                                author { \n                                    username\n                                    commentKarma\n                                }\n                            }\n                        }\n                    }\n                }\n            }\n            '], ['\n            query newListings {\n                graphQLHub\n                reddit {\n                    subreddit(name: "movies"){\n                        newListings(limit: 20) {\n                            title\n                            comments {\n                                body\n                                author { \n                                    username\n                                    commentKarma\n                                }\n                            }\n                        }\n                    }\n                }\n            }\n            ']);
+var _templateObject = _taggedTemplateLiteral(['\n            query UserInfo {\n                User(id:21) {\n                    id\n                    firstName\n                    lastName\n                    email\n                    avatar \n                }\n            }\n            '], ['\n            query UserInfo {\n                User(id:21) {\n                    id\n                    firstName\n                    lastName\n                    email\n                    avatar \n                }\n            }\n            ']);
 
 var _types = require('./types');
 
@@ -20075,7 +20665,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
-var actions = exports.actions = _defineProperty({}, types.GET_LATEST_LISTINGS, function (_ref) {
+var actions = exports.actions = _defineProperty({}, types.GET_USER_INFO, function (_ref) {
     var commit = _ref.commit,
         apollo = _ref.apollo,
         gql = _ref.gql;
@@ -20083,10 +20673,10 @@ var actions = exports.actions = _defineProperty({}, types.GET_LATEST_LISTINGS, f
     apollo.query({
         query: gql(_templateObject)
     }).then(function (response) {
-        console.log(response.data);
+        commit(types.GET_USER_INFO, response.data.User);
     });
 });
-},{"./types":147}],146:[function(require,module,exports) {
+},{"./types":53}],37:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -20102,8 +20692,14 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var mutations = exports.mutations = _defineProperty({}, types.GET_LATEST_LISTINGS, function (state, data) {});
-},{"./types":147}],142:[function(require,module,exports) {
+var mutations = exports.mutations = _defineProperty({}, types.GET_USER_INFO, function (state, data) {
+    state.avatar = data.avatar;
+    state.email = data.email;
+    state.firstName = data.firstName;
+    state.id = data.id;
+    state.lastName = data.lastName;
+});
+},{"./types":53}],15:[function(require,module,exports) {
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -20125,7 +20721,7 @@ exports.default = {
   actions: _actions.actions,
   mutations: _mutations.mutations
 };
-},{"./state":143,"./getters":144,"./actions":145,"./mutations":146}],4:[function(require,module,exports) {
+},{"./state":34,"./getters":35,"./actions":36,"./mutations":37}],6:[function(require,module,exports) {
 'use strict';
 
 var _vue = require('vue');
@@ -20140,17 +20736,17 @@ var _src = require('../../../src');
 
 var _src2 = _interopRequireDefault(_src);
 
-var _movies = require('./modules/movies');
+var _user = require('./modules/user');
 
-var _movies2 = _interopRequireDefault(_movies);
+var _user2 = _interopRequireDefault(_user);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 _vue2.default.use(_src2.default, {
-  uri: 'http://www.testing.com',
+  uri: 'https://fakerql.com/graphql',
   modules: [{
-    name: 'movies',
-    store: _movies2.default
+    name: 'user',
+    store: _user2.default
   }]
 });
 
@@ -20160,7 +20756,7 @@ new _vue2.default({
     return h(_App2.default);
   }
 });
-},{"vue":7,"./App.vue":6,"../../../src":10,"./modules/movies":142}],0:[function(require,module,exports) {
+},{"vue":12,"./App.vue":10,"../../../src":14,"./modules/user":15}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
 function Module(config) {
@@ -20179,7 +20775,7 @@ function Module(config) {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:51233/');
+  var ws = new WebSocket('ws://localhost:51017/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -20282,4 +20878,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,4])
+},{}]},{},[0,6])

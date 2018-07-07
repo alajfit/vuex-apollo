@@ -1,13 +1,13 @@
 import Vue from 'vue'
 import App from './App.vue'
 import vuexApollo from '../../../src'
-import movies from './modules/movies'
+import user from './modules/user'
 
 Vue.use(vuexApollo, {
-    uri: 'http://www.testing.com',
+    uri: 'https://fakerql.com/graphql',
     modules: [{
-      name: 'movies',
-      store: movies
+      name: 'user',
+      store: user
     }]
 })
 
