@@ -4,7 +4,12 @@
 [![npm](https://img.shields.io/npm/v/vuex-apollo.svg) ![npm](https://img.shields.io/npm/dm/vuex-apollo.svg)](https://www.npmjs.com/package/vuex-apollo)
 
 <p align="center">
-  <img width="200" height="200" src="./docs/assets/vuex-apollo.png">
+  <img width="200" height="200" src="./docs/assets/vuex-apollo.png" />
+</p>
+<p align="center">
+  <a href="https://travis-ci.org/alajfit/vuex-apollo">
+    <img src="https://travis-ci.org/alajfit/vuex-apollo.svg?branch=master" alt="Build Status" />
+  </a>
 </p>
 
 ## Install
