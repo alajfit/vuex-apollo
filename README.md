@@ -136,6 +136,8 @@ export const actions = {
 - Look at making the bundle smaller
 - Add Unit Testing
 - Add E2E Testing
+- Integrate Vuex with apollo-link-state
+- When major Vuex changes affect this plugin adapt the plugin - [Vue Roadmap](https://github.com/vuejs/roadmap#vuex-4x)
 
 ## Feedback
 - Please raise any issues you find
