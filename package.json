@@ -22,7 +22,13 @@
   "keywords": [
     "vuex",
     "apollo",
-    "graphql"
+    "graphql",
+    "vuex-apollo",
+    "vuex apollo",
+    "vuexApollo",
+    "vue",
+    "vue-apollo",
+    "vueApollo"
   ],
   "author": "Alan J. Fitzpatrick <alajfit@gmail.com>",
   "license": "ISC",
