@@ -1,6 +1,4 @@
 # Vuex Apollo (Bringing the best of both worlds together)
-> First stable release is out
-
 [![npm](https://img.shields.io/npm/v/vuex-apollo.svg) ![npm](https://img.shields.io/npm/dm/vuex-apollo.svg)](https://www.npmjs.com/package/vuex-apollo)
 
 <p align="center">
