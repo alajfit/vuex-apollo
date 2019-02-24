@@ -1,4 +1,6 @@
 # Vuex Apollo (Bringing the best of both worlds together)
+[![Build Status](https://travis-ci.org/alajfit/vuex-apollo.svg?branch=master)](https://travis-ci.org/alajfit/vuex-apollo)
+[![codecov](https://codecov.io/gh/alajfit/vuex-apollo/branch/master/graph/badge.svg)](https://codecov.io/gh/alajfit/vuex-apollo)
 [![npm](https://img.shields.io/npm/v/vuex-apollo.svg) ![npm](https://img.shields.io/npm/dm/vuex-apollo.svg)](https://www.npmjs.com/package/vuex-apollo)
 
 <p align="center">
