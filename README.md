@@ -143,13 +143,6 @@ export const actions = {
 - Please raise any issues you find
 - This is still a work in progress and I'll update as and when I have free time
 
-<p>
-  <a href="https://www.patreon.com/staratarms" target="_blank">
-    <h3>If I've helped you out in any way why not: :blush:</h3>
-    <img src="./docs/assets/patreon.png" alt="Become a Patreon">
-  </a>
-</p>
-
 
 ---
 
